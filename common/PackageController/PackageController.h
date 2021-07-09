@@ -2,7 +2,7 @@
 #define PACKAGECONTROLLERH
 #include <queue>
 #include <SDL_net.h>
-#include "Package.h"
+#include "../Package.h"
 
 class PackageController
 {
@@ -14,7 +14,6 @@ public:
 	void sendPackages(TCPsocket receiver);
 	void receivePackages(TCPsocket sender);
 	Package getFrontReceivedPackage();
-};	
+};
 
 #endif // !PACKAGECONTROLLERH
-

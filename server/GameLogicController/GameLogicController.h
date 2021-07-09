@@ -1,6 +1,6 @@
 #ifndef GAMELOGICCONTROLLERH
 #define GAMELOGICCONTROLLERH
-#include "Package.h"
+#include "../../common/Package.h"
 class GameLogicController
 {
 public:
@@ -11,5 +11,3 @@ public:
 };
 
 #endif // !GAMELOGICCONTROLLERH
-
-

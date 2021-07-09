@@ -1,8 +1,9 @@
 #ifndef GAMECLIENTCONTROLLERH
 #define GAMECLIENTCONTROLLERH
-#include "Package.h"
+#include "../../common/Package.h"
 class GameClientController
 {
+public:
 	int playerFields[2][10][10];
 	int playerIndexOnServer;
 

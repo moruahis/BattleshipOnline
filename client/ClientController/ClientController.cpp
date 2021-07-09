@@ -1,25 +1,29 @@
 #include "ClientController.h"
 
-int ClientController::start()
+ClientController::ClientController()
 {
-    return 0;
+    this->connected = false;
+    this->ip = IPaddress();
+    this->serverSocket = TCPsocket();
 }
 
 void ClientController::connect(const char* serverIp, Uint16 port)
 {
     while (!connected)
     {
-        if (!SDLNet_ResolveHost(&this->ip, serverIp, port))
+        if (SDLNet_ResolveHost(&this->ip, serverIp, port)==-1)
         {
-            printf("Can't resolve host\n");
+            printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
             SDL_Delay(1000);
+            continue;
         }
 
         this->serverSocket = SDLNet_TCP_Open(&this->ip);
         if (!this->serverSocket)
         {
-            printf("No connection. Retrying\n");
+            printf("SDLNet_TCP_Open: %s\n", SDLNet_GetError());
             SDL_Delay(1000);
+            continue;
         }
         else
             connected = true;

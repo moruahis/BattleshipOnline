@@ -1,7 +1,8 @@
 #include "ServerController.h"
 
-int ServerController::start()
+ServerController::ServerController()
 {
+    server = TCPsocket();
     done = false;
     bothPlayersConnected = false;
     socketSet = SDLNet_AllocSocketSet(2);
@@ -10,13 +11,15 @@ int ServerController::start()
 
     if (SDLNet_ResolveHost(&ip, NULL, 9999) == -1) {
         printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-        return 1;
+        return;
     }
     server = SDLNet_TCP_Open(&ip);
     if (!server) {
         printf("SDLNet_TCP_Open: %s\n", SDLNet_GetError());
-        return 2;
+        return;
     }
+    else
+        printf("Server started\n");
 }
 
 void ServerController::getConnections()

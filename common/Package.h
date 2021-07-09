@@ -29,6 +29,7 @@ enum Message
 	strikeSuccess,
 	strikeMissed,
 	setIndex,
+	infoBothConnected,
 	timeToSendPackages // utility
 };
 

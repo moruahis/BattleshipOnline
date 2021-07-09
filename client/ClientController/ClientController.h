@@ -5,7 +5,7 @@
 #include <SDL_net.h>
 #include <cstdio>
 #include <vector>
-#include "Package.h"
+#include "../../common/Package.h"
 
 class ClientController
 {
@@ -14,7 +14,8 @@ class ClientController
 	bool connected;
 
 public:
-	int start();
+	bool bothPlayersConnected;
+	ClientController();
 	void connect(const char* serverIp, Uint16 port);
 	TCPsocket getServerSocket();
 	void closeConnection();
