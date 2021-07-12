@@ -8,9 +8,8 @@ protected:
     SDL_Surface *surf;
     SDL_Texture *txtr;
     SDL_Rect place;
-    int FPS;
+    SDL_Rect startPlace;
 public:
-    gameObj(){FPS = 60;}
     virtual void image() = 0;
 };
 
@@ -23,27 +22,12 @@ protected:
     bool grabbingFlag;
     bool rotationFlag;
 public:
-    ship(SDL_Renderer *ren, short value, SDL_Rect dst)
+    ship()
     {
-        std::string filename;
-        filename = "ship_" + std::to_string(cellsValue) + ".bmp";
-        std::cout << filename << std::endl;
-
-        surf = SDL_LoadBMP(filename.c_str());
-        if (!surf)
-            std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
-        txtr = SDL_CreateTextureFromSurface(ren, surf);
-        if (!txtr)
-            std::cerr << "Texture (ship) wasn't created: " << SDL_GetError() << std::endl;
-
-        render = ren;
-        place = dst;
-        cellsValue = value;
-        HP = value;
-        rotationFlag = false;
-        grabbingFlag = false;
-
-        std::cerr << "===Ship with " << cellsValue << " cells is created===" << std::endl;
+        surf = NULL;
+        txtr = NULL;
+        place = {0, 0, 0, 0}; startPlace = place;
+        cellsValue = 0; HP = 0; grabbingFlag = false; rotationFlag = false;
     }
     ~ship()
     {
@@ -51,6 +35,31 @@ public:
         if (txtr)
             SDL_DestroyTexture(txtr);
         std::cerr << "===Ship is destroyed===" << std::endl;
+    }
+    bool loadSkin(SDL_Renderer *ren, short value, SDL_Rect *dst)
+    {
+        cellsValue = value;
+        render = ren;
+
+        std::string filename;
+        filename = "ship_" + std::to_string(cellsValue) + ".bmp";
+        std::cout << filename << std::endl;
+
+        surf = SDL_LoadBMP(filename.c_str());
+        if (!surf)
+        {
+            std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
+            return false;
+        }
+        dst->h = surf->h; dst->w = surf->h;
+        place = *dst;
+        txtr = SDL_CreateTextureFromSurface(ren, surf);
+        if (!txtr)
+        {
+            std::cerr << "Texture (ship) wasn't created: " << SDL_GetError() << std::endl;
+            return false;
+        }
+        return true;
     }
     short getHP()
     {
@@ -71,20 +80,32 @@ public:
     void handleEvent(SDL_Event evt)
     {
         event = evt;
-        if (event.type == SDL_MOUSEMOTION && grabbingFlag)
+
+        if (grabbingFlag)
         {
-            place.x += event.motion.xrel;
-            place.y += event.motion.yrel;
+            place.x = event.motion.x; place.y = event.motion.y;
+            std::cout << "dst.x = " << place.x << "; dst.y = " << place.y << std::endl;
         }
-        if (event.type == SDL_MOUSEBUTTONDOWN ) //добавить описание координат
+
+        if (!grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN &&
+            (event.motion.x>=place.x && event.motion.x<=(place.x+place.w) &&
+            event.motion.y>=place.y && event.motion.y<=(place.y+place.h)))
         {
+            std::cout << "Is grabbed" << std::endl;
+            grabbingFlag = true;
+            startPlace = place;
+        }
+        if (grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN &&
+            ((event.motion.x<startPlace.x || event.motion.x>(startPlace.x+startPlace.w)) &&
+            (event.motion.y<startPlace.y || event.motion.y>(startPlace.y+startPlace.h))))
+        {
+            std::cout << "Is not grabbed anymore" << std::endl;
             grabbingFlag = !grabbingFlag;
         }
-
     }
-    void moveShip()
+    void image() override
     {
-
+        SDL_RenderCopy(render, txtr, NULL, &place);
     }
 };
 

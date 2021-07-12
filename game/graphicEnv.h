@@ -24,7 +24,6 @@ public:
         std::cerr << "===graphicEnv object was destroyed===" << std::endl;
     }
 
-
     SDL_Rect getDest(void)
     {
         return dest;
@@ -39,5 +38,19 @@ public:
     }
 };
 
-
+class renderer
+{
+    SDL_Renderer *ren;
+public:
+    renderer(SDL_Window *win)
+    {
+        ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+        if (!ren)
+            std::cerr << "Failed to create Renderer: " << SDL_GetError() << std::endl;
+    }
+    SDL_Renderer* getRen(void)
+    {
+        return ren;
+    }
+};
 #endif // GRAPHICENV_H_INCLUDED

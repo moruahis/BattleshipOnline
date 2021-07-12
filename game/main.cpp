@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include <math.h>
 
 //#include <SDL_ttf.h>
@@ -40,6 +41,7 @@ void game(SDL_Renderer *ren, SDL_Window *win);
 bool loadField(SDL_Renderer *ren);
 
 short shipsAmount = 15; //10?
+
 
 int main(int argc, char* argv[])
 {
@@ -98,8 +100,59 @@ bool init()
 void game(SDL_Renderer *ren, SDL_Window *win)
 {
     SDL_Event evt;
+    SDL_Rect dst1 = {0, 0, 0, 0}, dst2 = {50, 0, 0, 0}, dst3 = {100, 0, 0, 0}, dst4 = {150, 0, 0, 0};
     bool flag = true;
+    int maxAmount = 4;
     graphicEnv gameUI;
+    std::vector <ship> shipOne, shipTwo, shipThree, shipFour;
+    shipOne.resize(maxAmount);
+    shipTwo.resize(maxAmount-1);
+    shipThree.resize(maxAmount-2);
+    shipFour.resize(maxAmount-3);
+
+    for (int i = 0; i<maxAmount; i++)
+    {
+        if (i<shipOne.size())
+        {
+            if (!shipOne[i].loadSkin(ren, 1, &dst1))
+            {
+                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
+                return;
+            }
+            dst1.y += scale_y(50);
+            shipOne[i].image();
+        }
+        if (i<shipTwo.size())
+        {
+            if (!shipTwo[i].loadSkin(ren, 2, &dst2))
+            {
+                std::cerr << "Ship with two cells wasn't loaded" << std::endl;
+                return;
+            }
+            dst2.y += scale_y(50);
+            shipTwo[i].image();
+        }
+        if (i<shipThree.size())
+        {
+            if (!shipThree[i].loadSkin(ren, 3, &dst3))
+            {
+                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
+                return;
+            }
+            dst3.y += scale_y(50);
+            shipThree[i].image();
+        }
+        if (i<shipFour.size())
+        {
+            if (!shipFour[i].loadSkin(ren, 4, &dst4))
+            {
+                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
+                return;
+            }
+            dst4.y += scale_y(50);
+            shipFour[i].image();
+        }
+    }
 
     if (!loadField(ren))
     {
@@ -125,7 +178,14 @@ void game(SDL_Renderer *ren, SDL_Window *win)
                 SDL_GetWindowSize(win, &SCREEN_WIDTH, &SCREEN_HEIGHT);
                 gameUI.invertWindowFlag();
             }
-            SDL_RenderPresent(ren); //пофиксить отображение
+
+            if (!loadField(ren))
+            {
+                std::cerr << "Game files are not loaded: quit" << std::endl;
+                return;
+            }
+
+            SDL_RenderPresent(ren);
         }
     }
 }
@@ -155,7 +215,8 @@ bool loadField(SDL_Renderer *ren) //loads background and fields
     {
         std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
         return false;
-    }    txtr = SDL_CreateTextureFromSurface(ren, surf);
+    }
+    txtr = SDL_CreateTextureFromSurface(ren, surf);
     if (!txtr)
     {
         std::cerr << "Texture (field) wasn't created: " << SDL_GetError() << std::endl;
