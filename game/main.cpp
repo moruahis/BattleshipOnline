@@ -37,7 +37,7 @@ typedef struct fieldCell
 
 bool init();
 void game(SDL_Renderer *ren, SDL_Window *win);
-void loadField(SDL_Renderer *ren);
+bool loadField(SDL_Renderer *ren);
 
 short shipsAmount = 15; //10?
 
@@ -101,7 +101,11 @@ void game(SDL_Renderer *ren, SDL_Window *win)
     bool flag = true;
     graphicEnv gameUI;
 
-    loadField(ren);
+    if (!loadField(ren))
+    {
+        std::cerr << "Game files are not loaded: quit" << std::endl;
+        return;
+    }
 
     while (flag)
     {
@@ -124,10 +128,9 @@ void game(SDL_Renderer *ren, SDL_Window *win)
             SDL_RenderPresent(ren); //пофиксить отображение
         }
     }
-
 }
 
-void loadField(SDL_Renderer *ren) //loads background and fields
+bool loadField(SDL_Renderer *ren) //loads background and fields
 {
     SDL_Surface *surf = NULL;
     SDL_Texture *txtr = NULL;
@@ -135,18 +138,29 @@ void loadField(SDL_Renderer *ren) //loads background and fields
 
     surf = SDL_LoadBMP("background.bmp");
     if (!surf)
+    {
         std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
+        return false;
+    }
     txtr = SDL_CreateTextureFromSurface(ren, surf);
     if (!txtr)
+    {
         std::cerr << "Texture (background) wasn't created: " << SDL_GetError() << std::endl;
+        return false;
+    }
     SDL_RenderCopy(ren, txtr, NULL, NULL);
 
     surf = SDL_LoadBMP("fields.bmp");
     if (!surf)
+    {
         std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
-    txtr = SDL_CreateTextureFromSurface(ren, surf);
+        return false;
+    }    txtr = SDL_CreateTextureFromSurface(ren, surf);
     if (!txtr)
-        std::cerr << "Texture (background) wasn't created: " << SDL_GetError() << std::endl;
+    {
+        std::cerr << "Texture (field) wasn't created: " << SDL_GetError() << std::endl;
+        return false;
+    }
     dst.x = scale_x(30);
     dst.y = scale_y(120);
     dst.h = scale_y(surf->h);
@@ -159,4 +173,5 @@ void loadField(SDL_Renderer *ren) //loads background and fields
     SDL_FreeSurface(surf);
     if (txtr)
             SDL_DestroyTexture(txtr);
+    return true;
 }
