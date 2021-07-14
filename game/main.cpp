@@ -10,10 +10,19 @@
 #else
     #include <SDL2/SDL.h>
 #endif
+#include "package.h"
+
+/***Describing field***/
+typedef struct fieldCell
+{
+    bool wasShooted;
+    states curState;
+} cell;
+short shipsAmount = 15; //10?
+cell field[10][10] = {{false, emptyCell}};
 
 #include "graphicEnv.h"
 #include "gameObj.h"
-#include "package.h"
 
 /***Screen size and scaling functions***/
 int SCREEN_WIDTH = 720; //1% = 7.2
@@ -28,20 +37,9 @@ int scale_y(double value)
 }
 /***/
 
-
-/***Describing field***/
-typedef struct fieldCell
-{
-    bool wasShooted;
-    states curState;
-} cell;
-
 bool init();
 void game(SDL_Renderer *ren, SDL_Window *win);
 bool loadField(SDL_Renderer *ren);
-
-short shipsAmount = 15; //10?
-
 
 int main(int argc, char* argv[])
 {
@@ -100,70 +98,62 @@ bool init()
 void game(SDL_Renderer *ren, SDL_Window *win)
 {
     SDL_Event evt;
-    SDL_Rect dst1 = {0, 0, 0, 0}, dst2 = {50, 0, 0, 0}, dst3 = {100, 0, 0, 0}, dst4 = {150, 0, 0, 0};
     bool flag = true;
     int maxAmount = 4;
+    SDL_Rect dst[maxAmount];
+
+    //Initialization dst[]
+    for (int i = 0, startCoord = 360, width = 30; i<maxAmount; i++, width+=30)
+    {
+        dst[i] = {30, startCoord, width, 30};
+        startCoord+=40;
+    }
+
     graphicEnv gameUI;
-    std::vector <ship> shipOne, shipTwo, shipThree, shipFour;
-    shipOne.resize(maxAmount);
-    shipTwo.resize(maxAmount-1);
-    shipThree.resize(maxAmount-2);
-    shipFour.resize(maxAmount-3);
+    std::vector <ship> ships[maxAmount];
 
     for (int i = 0; i<maxAmount; i++)
+        ships[i].resize(maxAmount-i);
+
+    //Setting start places for ships
+    for (int i = 0; i<maxAmount; i++)
     {
-        if (i<shipOne.size())
+        for (int j = 0; (unsigned long int)j<ships[i].size(); j++)
         {
-            if (!shipOne[i].loadSkin(ren, 1, &dst1))
-            {
-                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
-                return;
-            }
-            dst1.y += scale_y(50);
-            shipOne[i].image();
-        }
-        if (i<shipTwo.size())
-        {
-            if (!shipTwo[i].loadSkin(ren, 2, &dst2))
-            {
-                std::cerr << "Ship with two cells wasn't loaded" << std::endl;
-                return;
-            }
-            dst2.y += scale_y(50);
-            shipTwo[i].image();
-        }
-        if (i<shipThree.size())
-        {
-            if (!shipThree[i].loadSkin(ren, 3, &dst3))
-            {
-                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
-                return;
-            }
-            dst3.y += scale_y(50);
-            shipThree[i].image();
-        }
-        if (i<shipFour.size())
-        {
-            if (!shipFour[i].loadSkin(ren, 4, &dst4))
-            {
-                std::cerr << "Ship with one cell wasn't loaded" << std::endl;
-                return;
-            }
-            dst4.y += scale_y(50);
-            shipFour[i].image();
+            ships[i][j].setPlace(dst[i]);
+            dst[i].x+=scale_x(dst[i].w+10);
         }
     }
 
+    /***Loading .bmp's***/
+    for (int i = 0; i<maxAmount; i++)
+    {
+        for (int j = 0; (unsigned long int)j<ships[i].size(); j++)
+        {
+            if (!ships[i][j].loadSkin(ren, i+1))
+            {
+                std::cerr << "Ship with " << i+1 << " cells wasn't loaded" << std::endl;
+                return;
+            }
+            dst[i].y += scale_y(50);
+            ships[i][j].image();
+        }
+    }
     if (!loadField(ren))
     {
         std::cerr << "Game files are not loaded: quit" << std::endl;
         return;
     }
+    /******/
 
     while (flag)
     {
         while(SDL_PollEvent(&evt))
         {
+            for (int i = 0; i<maxAmount; i++)
+                for (int j = 0; (unsigned long int)j<ships[i].size(); j++)
+                    ships[i][j].handleEvent(evt);
+
             if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE)
             {
                 flag = false;
@@ -184,6 +174,10 @@ void game(SDL_Renderer *ren, SDL_Window *win)
                 std::cerr << "Game files are not loaded: quit" << std::endl;
                 return;
             }
+
+            for (int i = 0; i<maxAmount; i++)
+                for (int j = 0; (unsigned long int)j<ships[i].size(); j++)
+                    ships[i][j].image();
 
             SDL_RenderPresent(ren);
         }
@@ -223,7 +217,7 @@ bool loadField(SDL_Renderer *ren) //loads background and fields
         return false;
     }
     dst.x = scale_x(30);
-    dst.y = scale_y(120);
+    dst.y = scale_y(30);
     dst.h = scale_y(surf->h);
     dst.w = scale_y(surf->w);
     SDL_RenderCopy(ren, txtr, NULL, &dst);
@@ -236,3 +230,5 @@ bool loadField(SDL_Renderer *ren) //loads background and fields
             SDL_DestroyTexture(txtr);
     return true;
 }
+
+

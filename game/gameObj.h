@@ -7,8 +7,8 @@ protected:
     SDL_Renderer *render;
     SDL_Surface *surf;
     SDL_Texture *txtr;
-    SDL_Rect place;
-    SDL_Rect startPlace;
+    SDL_Rect place, deniedCells;
+    int cellX, cellY;
 public:
     virtual void image() = 0;
 };
@@ -26,7 +26,8 @@ public:
     {
         surf = NULL;
         txtr = NULL;
-        place = {0, 0, 0, 0}; startPlace = place;
+        place = {0, 0, 0, 0};
+        deniedCells = {-1, -1, -1, -1};
         cellsValue = 0; HP = 0; grabbingFlag = false; rotationFlag = false;
     }
     ~ship()
@@ -36,7 +37,7 @@ public:
             SDL_DestroyTexture(txtr);
         std::cerr << "===Ship is destroyed===" << std::endl;
     }
-    bool loadSkin(SDL_Renderer *ren, short value, SDL_Rect *dst)
+    bool loadSkin(SDL_Renderer *ren, short value)
     {
         cellsValue = value;
         render = ren;
@@ -51,8 +52,7 @@ public:
             std::cerr << "Image wasn't loaded: " << SDL_GetError() << std::endl;
             return false;
         }
-        dst->h = surf->h; dst->w = surf->h;
-        place = *dst;
+        place.h = surf->h; place.w = surf->w;
         txtr = SDL_CreateTextureFromSurface(ren, surf);
         if (!txtr)
         {
@@ -61,11 +61,15 @@ public:
         }
         return true;
     }
+    void setPlace(SDL_Rect dest)
+    {
+        place = dest;
+    }
     short getHP()
     {
         return HP;
     }
-    SDL_Rect shipPlace()
+    SDL_Rect getPlace()
     {
         return place;
     }
@@ -81,27 +85,56 @@ public:
     {
         event = evt;
 
+        SDL_Rect mousePos = {event.motion.x, event.motion.y, 1, 1};
+
         if (grabbingFlag)
         {
+            cellX = (place.x - 30)/30;
+            cellY = (place.y - 30)/30;
+
+            cellX = cellX>9 ? 9 : (cellX<0 ? 0 : cellX);
+            cellY = cellY>9 ? 9 : (cellY<0 ? 0 : cellY);
+
             place.x = event.motion.x; place.y = event.motion.y;
-            std::cout << "dst.x = " << place.x << "; dst.y = " << place.y << std::endl;
         }
 
-        if (!grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN &&
-            (event.motion.x>=place.x && event.motion.x<=(place.x+place.w) &&
-            event.motion.y>=place.y && event.motion.y<=(place.y+place.h)))
+        if (!grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN && SDL_HasIntersection(&mousePos, &place))
         {
             std::cout << "Is grabbed" << std::endl;
             grabbingFlag = true;
-            startPlace = place;
+
+            if (deniedCells.x != -1)
+                for (int i = deniedCells.x; i<(deniedCells.x+deniedCells.w); i++)
+                    for (int j = deniedCells.y; j<(deniedCells.y+deniedCells.h); j++)
+                        field[i][j].curState = emptyCell;
         }
-        if (grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN &&
-            ((event.motion.x<startPlace.x || event.motion.x>(startPlace.x+startPlace.w)) &&
-            (event.motion.y<startPlace.y || event.motion.y>(startPlace.y+startPlace.h))))
-        {
-            std::cout << "Is not grabbed anymore" << std::endl;
-            grabbingFlag = !grabbingFlag;
-        }
+        else
+            if (grabbingFlag && event.type == SDL_MOUSEBUTTONDOWN && checkField())
+            {
+                std::cout << "Is not grabbed anymore" << std::endl;
+                grabbingFlag = !grabbingFlag;
+                deniedCells = {cellX-1, cellY-1, cellsValue+2, 3};
+
+                for (int i = deniedCells.x; i<(deniedCells.x+deniedCells.w); i++)
+                    for (int j = deniedCells.y; j<(deniedCells.y+deniedCells.h); j++)
+                        field[i][j].curState = shipDenied;
+
+                for (int i = cellX; i<(cellX+cellsValue); i++)
+                    for (int j = cellY; j<(cellY+1); j++) //предусмотрено для введения поворота корабля
+                        field[i][j].curState = (states)cellsValue;
+
+
+                place.x = cellX*30+30;
+                place.y = cellY*30+30;
+            }
+    }
+    bool checkField() //checking cells near choosed cell
+    {
+        for (int i = cellX; i<(cellX+cellsValue); i++)
+            for (int j = cellY; j<(cellY+1); j++)
+                if (field[cellX][cellY].curState==shipDenied)
+                    return false;
+        return true;
     }
     void image() override
     {
