@@ -8,12 +8,12 @@ class PackageController
 {
 public:
 	//bool serverSide;
-	std::queue<Package> sendPackagesQueue, receivedPackagesQueue;
-	void addPackageToSendQueue(Package package);
-	void addPackageToReceivedQueue(Package package);
-	void sendPackages(TCPsocket receiver);
-	void receivePackages(TCPsocket sender);
-	Package getFrontReceivedPackage();
+	std::queue<Package> sendPackagesQueue[2], receivedPackagesQueue[2];
+	void addPackageToSendQueue(Package package, int index);
+	void addPackageToReceivedQueue(Package package, int index);
+	void sendPackages(TCPsocket receiver, int index);
+	void receivePackages(TCPsocket sender, int index);
+	Package getFrontReceivedPackage(int index);
 };
 
 #endif // !PACKAGECONTROLLERH

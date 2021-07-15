@@ -34,19 +34,18 @@ Package GameLogicController::proceedRequest(Package package)
 		for (int i = 0; i < shipSize; i++)
 		{
 			playerFields[playerIndex]
-				[x + (shipOrientation == 0) * i]
-			[y + (shipOrientation == 1) * i] = (shipSize1 + shipSize - 1);
+				[y + (shipOrientation == 1) * i]
+			[x + (shipOrientation == 0) * i] = (shipSize1 + shipSize - 1);
 			// to shift in enum
 		}
 		return Package{};
 	}
 	case requestField: {
-		playerIndex = package.data[0];
 		response.message = fieldInfo;
-		response.data[0] = playerIndex;
-		for (int i = 0; i < 10; i++)
-			for (int j = 0; j < 10; j++)
-				response.data[1 + 10 * i + j] = playerFields[playerIndex][i][j];
+		for (int pl = 0; pl < 2; pl++)
+			for (int i = 0; i < 10; i++)
+				for (int j = 0; j < 10; j++)
+					response.data[pl * 100 + 10 * j + i] = playerFields[pl][j][i];
 
 		return response;
 	}

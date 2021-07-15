@@ -7,7 +7,8 @@ enum states {
 	shipSize1,
 	shipSize2,
 	shipSize3,
-	shipSize4,
+	shipSize4, 
+	shipDenied,
 	shipDamaged,
 	shipDestroyed,
 	shotMissed

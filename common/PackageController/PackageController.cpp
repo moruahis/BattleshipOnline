@@ -1,24 +1,26 @@
 #include "PackageController.h"
 
-void PackageController::addPackageToSendQueue(Package package)
+void PackageController::addPackageToSendQueue(Package package, int index)
 {
-	sendPackagesQueue.push(package);
+	sendPackagesQueue[index].push(package);
 }
 
-void PackageController::addPackageToReceivedQueue(Package package)
+void PackageController::addPackageToReceivedQueue(Package package, int index)
 {
-	receivedPackagesQueue.push(package);
+	receivedPackagesQueue[index].push(package);
 }
 
-void PackageController::sendPackages(TCPsocket receiver)
+void PackageController::sendPackages(TCPsocket receiver, int index)
 {
 	Package package{ {0}, endOfPackages };
-	addPackageToSendQueue(package);
+	addPackageToSendQueue(package, index);
 
-	while (!sendPackagesQueue.empty())
+	while (!sendPackagesQueue[index].empty())
 	{
-		package = sendPackagesQueue.front();
-		sendPackagesQueue.pop();
+		package = sendPackagesQueue[index].front();
+		sendPackagesQueue[index].pop();
+
+		printf("Sending package: %d\n", package.message);
 		int result = SDLNet_TCP_Send(receiver, &package, sizeof(Package));
 		if (result < sizeof(package))
 			printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
@@ -27,29 +29,45 @@ void PackageController::sendPackages(TCPsocket receiver)
 	}
 }
 
-void PackageController::receivePackages(TCPsocket sender)
+void PackageController::receivePackages(TCPsocket sender, int index)
 {
 	Package pkg{ {0}, emptyPackage };
-	int emptyCounter=0;
-
-	while (pkg.message != endOfPackages && emptyCounter<1000)
-	{
-		int len = SDLNet_TCP_Recv(sender, &pkg, sizeof(Package));
-		if (!len) {
-			printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
+	int failCounter = 0;
+	SDLNet_SocketSet set = SDLNet_AllocSocketSet(1);
+	SDLNet_TCP_AddSocket(set, sender);
+	int numready = SDLNet_CheckSockets(set, 100);
+	if (numready == -1) {
+		printf("SDLNet_CheckSockets: %s\n", SDLNet_GetError());
+		//most of the time this is a system error, where perror might help you.
+		perror("SDLNet_CheckSockets");
+	}
+	else if (numready) {
+		printf("There are %d sockets with activity!\n", numready);
+		// check all sockets with SDLNet_SocketReady and handle the active ones.
+		if (SDLNet_SocketReady(sender)) {
+			printf("Ready\n");
+			while (pkg.message != endOfPackages && failCounter < 10)
+			{
+				int len = SDLNet_TCP_Recv(sender, &pkg, sizeof(Package));
+				if (!len) {
+					printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
+				}
+				if (pkg.message == emptyPackage)
+				{
+					failCounter += 1;
+				}
+				printf("received: %d\n");
+				addPackageToReceivedQueue(pkg, index);
+			}
 		}
-		if (pkg.message == emptyPackage)
-		{
-			emptyCounter += 1;
-			continue;
-		}
-		addPackageToReceivedQueue(pkg);
+		else
+			printf("Not ready\n");
 	}
 }
 
-Package PackageController::getFrontReceivedPackage()
+Package PackageController::getFrontReceivedPackage(int index)
 {
-	Package pkg = receivedPackagesQueue.front();
-	receivedPackagesQueue.pop();
+	Package pkg = receivedPackagesQueue[index].front();
+	receivedPackagesQueue[index].pop();
 	return pkg;
 }
