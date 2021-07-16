@@ -15,17 +15,17 @@
 
 using namespace std;
 
-	int SDLInit() {
-		if (SDL_Init(0) == -1) {
-			printf("SDL_Init: %s\n", SDL_GetError());
-			return 1;
-		}
-		if (SDLNet_Init() == -1) {
-			printf("SDLNet_Init: %s\n", SDLNet_GetError());
-			return 2;
-		}
-		return 0;
+int SDLInit() {
+	if (SDL_Init(0) == -1) {
+		printf("SDL_Init: %s\n", SDL_GetError());
+		return 1;
 	}
+	if (SDLNet_Init() == -1) {
+		printf("SDLNet_Init: %s\n", SDLNet_GetError());
+		return 2;
+	}
+	return 0;
+}
 
 int main()
 {
@@ -76,16 +76,34 @@ int main()
 	serverController.getConnections();
 
 	PackageController packageController{};
-	packageController.addPackageToSendQueue(Package{ {1}, infoBothConnected });
-	packageController.sendPackages(serverController.getPlayersSockets()[0]);
-	packageController.addPackageToSendQueue(Package{ {1}, infoBothConnected });
-	packageController.sendPackages(serverController.getPlayersSockets()[1]);
+	packageController.addPackageToSendQueue(Package{ {0}, setIndex }, 0);
+	packageController.addPackageToSendQueue(Package{ {1}, infoBothConnected }, 0);
+	packageController.sendPackages(serverController.getPlayersSockets()[0], 0);
+	packageController.addPackageToSendQueue(Package{ {1}, setIndex }, 1);
+	packageController.addPackageToSendQueue(Package{ {1}, infoBothConnected }, 1);
+	packageController.sendPackages(serverController.getPlayersSockets()[1], 1);
 
 	GameLogicController gameLogicController{};
-	packageController.receivePackages(serverController.getPlayersSockets()[0]);
-	while (!packageController.receivedPackagesQueue.empty())
+	bool done = false;
+	while (!done)
 	{
-		printf("%d\n", packageController.getFrontReceivedPackage().message);
+		for (int pl = 0; pl < 2; pl++) 
+		{
+			packageController.receivePackages(serverController.getPlayersSockets()[pl], pl);
+			while (!packageController.receivedPackagesQueue[pl].empty())
+			{
+				Package response = gameLogicController.proceedRequest(packageController.getFrontReceivedPackage(pl));
+				if (response.message == timeToSendPackages)
+				{
+					packageController.sendPackages(serverController.getPlayersSockets()[pl], pl);
+					continue;
+				}
+				else
+				{
+					packageController.addPackageToSendQueue(response, pl);
+				}
+			}
+		}
 	}
 	SDLNet_Quit();
 	SDL_Quit();
