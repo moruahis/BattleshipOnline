@@ -184,6 +184,10 @@ Package GameClientController::handleMouseEvent(SDL_Event _event)
 				playerIndexOnServer,
 				cellX,
 				cellY,
+				cell1X,
+				cell1Y,
+				cell2X,
+				cell2Y,
 				grabbedShip->getCellsValue(),
 				grabbedShip->getRotation()
 			},

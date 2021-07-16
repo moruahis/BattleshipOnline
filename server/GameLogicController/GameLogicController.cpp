@@ -5,12 +5,18 @@ Message GameLogicController::proceedShot(int playerIndex, int x, int y)
 	switch (playerFields[playerIndex][x][y])
 	{
 	case emptyCell:
+	{
+		this->playerFields[playerIndex][x][y] = shotMissed;
 		return strikeMissed;
+	}
 	case shipSize1:
 	case shipSize2:
 	case shipSize3:
 	case shipSize4:
+	{
+		this->playerFields[playerIndex][x][y] = shipDamaged;
 		return strikeSuccess;
+	}
 	case shipDamaged: // impossible?
 	case shipDestroyed: // impossible?
 	case shotMissed: // impossible?
@@ -29,8 +35,20 @@ Package GameLogicController::proceedRequest(Package package)
 		playerIndex = package.data[0];
 		x = package.data[1];
 		y = package.data[2];
-		int shipSize = package.data[3];
-		int shipOrientation = package.data[4]; // 0 horizontal, 1 vertical
+		int cell1X, cell2X, cell1Y, cell2Y;
+		cell1X = package.data[3];
+		cell1Y = package.data[4];
+		cell2X = package.data[5];
+		cell2Y = package.data[6];
+		int shipSize = package.data[7];
+		int shipOrientation = package.data[8]; // 0 horizontal, 1 vertical
+		for (int i = cell1Y; i <= cell2Y; i++)
+		{
+			for (int j = cell1X; j <= cell2X; j++)
+			{
+				playerFields[playerIndex][i][j] = shipDenied;
+			}
+		}
 		for (int i = 0; i < shipSize; i++)
 		{
 			playerFields[playerIndex]
@@ -45,8 +63,12 @@ Package GameLogicController::proceedRequest(Package package)
 		for (int pl = 0; pl < 2; pl++)
 			for (int i = 0; i < 10; i++)
 				for (int j = 0; j < 10; j++)
-					response.data[pl * 100 + 10 * j + i] = playerFields[pl][j][i];
-
+				{
+					if (pl != package.data[0] && ((playerFields[pl][j][i] >= shipSize1 && playerFields[pl][j][i] <= shipSize4) || playerFields[pl][j][i] == shipDenied))
+						response.data[pl * 100 + 10 * j + i] = emptyCell;
+					else
+						response.data[pl * 100 + 10 * j + i] = playerFields[pl][j][i];
+				}
 		return response;
 	}
 	case requestStrikeInfo:
