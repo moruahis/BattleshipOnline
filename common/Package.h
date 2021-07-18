@@ -31,6 +31,8 @@ enum Message
 	strikeMissed,
 	setIndex,
 	infoBothConnected,
+	battleBegins,
+	battleEnds,
 	timeToSendPackages // utility
 };
 

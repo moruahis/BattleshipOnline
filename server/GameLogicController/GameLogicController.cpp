@@ -1,12 +1,22 @@
 #include "GameLogicController.h"
 
+GameLogicController::GameLogicController()
+{
+	shipsPlaced[0] = shipsPlaced[1] = 0;
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 10; j++)
+			for (int k = 0; k < 10; k++)
+				playerFields[i][j][k] = 0;
+}
+
 Message GameLogicController::proceedShot(int playerIndex, int x, int y)
 {
-	switch (playerFields[playerIndex][x][y])
+	switch (playerFields[playerIndex][y][x])
 	{
 	case emptyCell:
+	case shipDenied:
 	{
-		this->playerFields[playerIndex][x][y] = shotMissed;
+		this->playerFields[playerIndex][y][x] = shotMissed;
 		return strikeMissed;
 	}
 	case shipSize1:
@@ -14,7 +24,7 @@ Message GameLogicController::proceedShot(int playerIndex, int x, int y)
 	case shipSize3:
 	case shipSize4:
 	{
-		this->playerFields[playerIndex][x][y] = shipDamaged;
+		this->playerFields[playerIndex][y][x] = shipDamaged;
 		return strikeSuccess;
 	}
 	case shipDamaged: // impossible?
@@ -31,7 +41,8 @@ Package GameLogicController::proceedRequest(Package package)
 	Package response{};
 	switch (package.message)
 	{
-	case requestPlaceShip: {
+	case requestPlaceShip:
+	{
 		playerIndex = package.data[0];
 		x = package.data[1];
 		y = package.data[2];
@@ -56,6 +67,7 @@ Package GameLogicController::proceedRequest(Package package)
 			[x + (shipOrientation == 0) * i] = (shipSize1 + shipSize - 1);
 			// to shift in enum
 		}
+		shipsPlaced[playerIndex] += 1;
 		return Package{};
 	}
 	case requestField: {
@@ -64,7 +76,7 @@ Package GameLogicController::proceedRequest(Package package)
 			for (int i = 0; i < 10; i++)
 				for (int j = 0; j < 10; j++)
 				{
-					if (pl != package.data[0] && ((playerFields[pl][j][i] >= shipSize1 && playerFields[pl][j][i] <= shipSize4) || playerFields[pl][j][i] == shipDenied))
+					if (pl != package.data[0] && ((playerFields[pl][j][i] >= shipSize1 && playerFields[pl][j][i] <= shipDenied)))
 						response.data[pl * 100 + 10 * j + i] = emptyCell;
 					else
 						response.data[pl * 100 + 10 * j + i] = playerFields[pl][j][i];
@@ -74,8 +86,8 @@ Package GameLogicController::proceedRequest(Package package)
 	case requestStrikeInfo:
 	{
 		playerIndex = package.data[0]; // package from player
-		x = response.data[1];
-		y = response.data[2];
+		x = package.data[1];
+		y = package.data[2];
 		int enemyIndex = playerIndex == 0; // get another index
 
 		response = { {enemyIndex, x,y}, proceedShot(enemyIndex, x, y) }; // proceed and return info about enemy cell

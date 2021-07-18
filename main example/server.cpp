@@ -85,9 +85,25 @@ int main()
 
 	GameLogicController gameLogicController{};
 	bool done = false;
+	bool stage2 = false;
+	int timer = 0;
 	while (!done)
 	{
-		for (int pl = 0; pl < 2; pl++) 
+		if (timer++ < 1000)
+			continue;
+		else
+			timer = 0;
+		if (!stage2 && gameLogicController.shipsPlaced[0] > 9 && gameLogicController.shipsPlaced[1] > 9)
+		{
+			Package package{ {0}, battleBegins };
+			for (int pl = 0; pl < 2; pl++)
+			{
+				packageController.addPackageToSendQueue(package, pl);
+				packageController.sendPackages(serverController.getPlayersSockets()[pl], pl);
+			}
+			stage2 = true;
+		}
+		for (int pl = 0; pl < 2; pl++)
 		{
 			packageController.receivePackages(serverController.getPlayersSockets()[pl], pl);
 			while (!packageController.receivedPackagesQueue[pl].empty())
@@ -98,7 +114,7 @@ int main()
 					packageController.sendPackages(serverController.getPlayersSockets()[pl], pl);
 					continue;
 				}
-				else
+				else if (response.message != emptyPackage)
 				{
 					packageController.addPackageToSendQueue(response, pl);
 				}

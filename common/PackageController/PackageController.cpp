@@ -1,4 +1,26 @@
 #include "PackageController.h"
+#include <iostream>
+
+std::string messages[] =
+{
+	"emptyPackage",
+	"endOfPackages",
+	// coming from client:
+	"requestPlaceShip",
+	"requestField",
+	"requestStrikeInfo",
+	"requestMessages",
+	"requestIndex",
+	// coming from server:
+	"fieldInfo",
+	"strikeSuccess",
+	"strikeMissed",
+	"setIndex",
+	"infoBothConnected",
+	"battleBegins",
+	"battleEnds",
+	"timeToSendPackages"
+};
 
 void PackageController::addPackageToSendQueue(Package package, int index)
 {
@@ -19,13 +41,15 @@ void PackageController::sendPackages(TCPsocket receiver, int index)
 	{
 		package = sendPackagesQueue[index].front();
 		sendPackagesQueue[index].pop();
+		if (package.message == timeToSendPackages)
+			continue;
 
-		printf("Sending package: %d\n", package.message);
+		if (package.message>1 && package.message!= fieldInfo && package.message!= requestField && package.message != requestMessages)
+			std::cout << "Sending message: " << messages[package.message] << std::endl;
+		
 		int result = SDLNet_TCP_Send(receiver, &package, sizeof(Package));
 		if (result < sizeof(package))
 			printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
-		if (package.message == endOfPackages)
-			printf("end sent\n");
 	}
 }
 
@@ -42,10 +66,10 @@ void PackageController::receivePackages(TCPsocket sender, int index)
 		perror("SDLNet_CheckSockets");
 	}
 	else if (numready) {
-		printf("There are %d sockets with activity!\n", numready);
+		//printf("There are %d sockets with activity!\n", numready);
 		// check all sockets with SDLNet_SocketReady and handle the active ones.
 		if (SDLNet_SocketReady(sender)) {
-			printf("Ready\n");
+			//printf("Ready\n");
 			while (pkg.message != endOfPackages && failCounter < 10)
 			{
 				int len = SDLNet_TCP_Recv(sender, &pkg, sizeof(Package));
@@ -56,7 +80,8 @@ void PackageController::receivePackages(TCPsocket sender, int index)
 				{
 					failCounter += 1;
 				}
-				printf("received: %d\n");
+				if (pkg.message > 1 && pkg.message != fieldInfo && pkg.message != requestField && pkg.message != requestMessages)
+					std::cout << "received message: " << messages[pkg.message] << std::endl;
 				addPackageToReceivedQueue(pkg, index);
 			}
 		}

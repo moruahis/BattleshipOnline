@@ -131,8 +131,7 @@ int main()
 	surf = SDL_LoadBMP("res/missed.bmp");
 	SDL_Texture* missedTexture = SDL_CreateTextureFromSurface(renderer.getRen(), surf);
 	SDL_Rect currentPos;
-	Package shotPackage = gameClientController.makeShot(1, 1);
-	packageController.addPackageToSendQueue(shotPackage,0);
+
 	while (!done)
 	{
 		drawField(renderer, fieldSize, txtr1, txtr2);
@@ -143,6 +142,7 @@ int main()
 				done = false;
 				break;
 			}
+
 			Package pkg = gameClientController.handleMouseEvent(event);
 			if (pkg.message != emptyPackage)
 			{
@@ -150,7 +150,7 @@ int main()
 			}
 		}
 
-		if (timer > 10000)
+		if (timer > 1000)
 		{
 			Package fieldRequest{ {gameClientController.playerIndexOnServer}, requestField };
 			Package msgRequest{ {gameClientController.playerIndexOnServer}, requestMessages };
@@ -169,7 +169,6 @@ int main()
 					{
 					case shipDamaged:
 					{
-						
 						SDL_RenderCopy(renderer.getRen(), damagedTexture, NULL, &currentPos);
 						break;
 					}
@@ -202,13 +201,12 @@ int main()
 
 		SDL_RenderPresent(renderer.getRen());
 
-		if (timer++ > 10000)
+		if (timer++ > 1000)
 		{
 			packageController.receivePackages(clientController.getServerSocket(), 0);
 			while (!packageController.receivedPackagesQueue[0].empty())
 			{
 				Package p = packageController.receivedPackagesQueue[0].front();
-				cout<<"Message received:"<<messages[p.message]<<std::endl;
 				gameClientController.proceedResponse(p);
 				packageController.receivedPackagesQueue[0].pop();
 			}
@@ -216,9 +214,6 @@ int main()
 			timer = 0;
 		}
 	}
-	/*Package request = gameClientController.makeShot(0, 0);
-	packageController.addPackageToSendQueue(request);
-	packageController.sendPackages(clientController.getServerSocket());*/
 }
 
 void drawField(renderer renderer, SDL_Rect surfSize, SDL_Texture* txtr1, SDL_Texture* txtr2)
