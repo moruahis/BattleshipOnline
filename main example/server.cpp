@@ -94,7 +94,7 @@ int main()
 			continue;
 		else
 			timer = 0;
-		if (!stage2 && gameLogicController.shipsPlaced[0] > 3 && gameLogicController.shipsPlaced[1] > 3)
+		if (!stage2 && gameLogicController.shipsPlaced[0] > 9 && gameLogicController.shipsPlaced[1] > 9)
 		{
 			Package package{ {0}, battleBegins };
 			for (int pl = 0; pl < 2; pl++)
