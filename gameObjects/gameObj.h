@@ -70,6 +70,7 @@ public:
     void resetPosition()
     {
         this->place = this->initialPlace;
+        this->rotationFlag = false;
     }
     void setPlace(SDL_Rect dest)
     {
@@ -143,7 +144,14 @@ public:
     }
     void image() override
     {
-        SDL_RenderCopy(render, txtr, NULL, &place);
+        SDL_Point rotationPoint = { 0,0 };
+        SDL_Rect renderPlace = place;
+        renderPlace.x += 30 * rotationFlag;
+        SDL_RenderCopyEx(render, txtr, NULL, &renderPlace, 90*this->rotationFlag, &rotationPoint, SDL_FLIP_NONE);
+    }
+    void rotate()
+    {
+        rotationFlag = !rotationFlag;
     }
 };
 

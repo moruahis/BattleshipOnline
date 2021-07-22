@@ -89,8 +89,17 @@ Package GameLogicController::proceedRequest(Package package)
 		x = package.data[1];
 		y = package.data[2];
 		int enemyIndex = playerIndex == 0; // get another index
-
 		response = { {enemyIndex, x,y}, proceedShot(enemyIndex, x, y) }; // proceed and return info about enemy cell
+		if (response.message == strikeMissed)
+		{
+			canShoot[playerIndex] = false;
+			canShoot[enemyIndex] = true;
+		}
+		return response;
+	}
+	case requestTurn:
+	{
+		response = { {canShoot[0], canShoot[1]}, turnInfo };
 		return response;
 	}
 	case requestMessages:

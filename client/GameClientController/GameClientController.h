@@ -22,14 +22,16 @@ public:
 	int playerFields[2][10][10];
 	int playerIndexOnServer;
 	int gameState;
+	bool canShoot;
+	int gameWinner;
 
 	ship* grabbedShip;
 	std::vector <ship> ships[maxAmount];
 
 	SDL_Rect dst[maxAmount];
 
-	GameClientController(SDL_Renderer* ren);
-
+	GameClientController();
+	void placeShips(SDL_Renderer* ren);
 	Package createShotPackage(int x, int y);
 	void proceedResponse(Package response);
 	Package handleMouseEvent(SDL_Event event);

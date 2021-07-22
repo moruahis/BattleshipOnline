@@ -25,7 +25,9 @@ enum Message
 	requestStrikeInfo,
 	requestMessages,
 	requestIndex,
+	requestTurn,
 	// coming from server:
+	turnInfo,
 	fieldInfo,
 	strikeSuccess,
 	strikeMissed,

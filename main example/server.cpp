@@ -87,13 +87,14 @@ int main()
 	bool done = false;
 	bool stage2 = false;
 	int timer = 0;
+	int winner = -1;
 	while (!done)
 	{
 		if (timer++ < 1000)
 			continue;
 		else
 			timer = 0;
-		if (!stage2 && gameLogicController.shipsPlaced[0] > 9 && gameLogicController.shipsPlaced[1] > 9)
+		if (!stage2 && gameLogicController.shipsPlaced[0] > 3 && gameLogicController.shipsPlaced[1] > 3)
 		{
 			Package package{ {0}, battleBegins };
 			for (int pl = 0; pl < 2; pl++)
@@ -103,8 +104,35 @@ int main()
 			}
 			stage2 = true;
 		}
+		if (stage2)
+		{
+			bool playerAlive[2] = { false, false };
+			for (int pl = 0; pl < 2; pl++)
+			{
+				for (int i = 0; i < 10 && !playerAlive[pl]; i++)
+				{
+					for (int j = 0; j < 10; j++)
+					{
+						if (gameLogicController.playerFields[pl][i][j] >= shipSize1 && gameLogicController.playerFields[pl][i][j] <= shipSize4)
+						{
+							playerAlive[pl] = true;
+						}
+					}
+				}
+				if (playerAlive[pl] == false)
+					winner = !pl;
+			}
+		}
+
 		for (int pl = 0; pl < 2; pl++)
 		{
+			if (winner != -1)
+			{
+				Package endGame = { {winner}, battleEnds };
+				packageController.addPackageToSendQueue(endGame, pl);
+				packageController.sendPackages(serverController.getPlayersSockets()[pl], pl);
+				continue;
+			}
 			packageController.receivePackages(serverController.getPlayersSockets()[pl], pl);
 			while (!packageController.receivedPackagesQueue[pl].empty())
 			{

@@ -11,7 +11,9 @@ std::string messages[] =
 	"requestStrikeInfo",
 	"requestMessages",
 	"requestIndex",
+	"requestTurn",
 	// coming from server:
+	"turnInfo",
 	"fieldInfo",
 	"strikeSuccess",
 	"strikeMissed",
@@ -44,12 +46,14 @@ void PackageController::sendPackages(TCPsocket receiver, int index)
 		if (package.message == timeToSendPackages)
 			continue;
 
-		if (package.message>1 && package.message!= fieldInfo && package.message!= requestField && package.message != requestMessages)
+		if (package.message > 1 && package.message != fieldInfo && package.message != requestField && package.message != requestMessages)
 			std::cout << "Sending message: " << messages[package.message] << std::endl;
-		
+
 		int result = SDLNet_TCP_Send(receiver, &package, sizeof(Package));
 		if (result < sizeof(package))
+		{
 			printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
+		}
 	}
 }
 

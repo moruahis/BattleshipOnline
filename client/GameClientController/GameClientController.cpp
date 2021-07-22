@@ -12,19 +12,23 @@ int scale_y(double value)
 	return round((value / 5.4) * ((double)SCREEN_HEIGHT / 100));
 }
 
-GameClientController::GameClientController(SDL_Renderer* ren)
+GameClientController::GameClientController()
 {
+	gameWinner = -1;
 	gameState = shipPlacement;
-
 	grabbedShip = NULL;
+}
+
+void GameClientController::placeShips(SDL_Renderer* ren)
+{
 	for (int i = 0, startCoord = 360, width = 30; i < maxAmount; i++, width += 30)
 	{
-		dst[i] = { (playerIndexOnServer * (SCREEN_WIDTH / 2 + 30)) + 30, startCoord, width, 30 };
+		dst[i] = { (playerIndexOnServer * (SCREEN_WIDTH / 2)) + 30, startCoord, width, 30 };
 		startCoord += 40;
 	}
-
 	for (int i = 0; i < maxAmount; i++)
 		ships[i].resize(maxAmount - i);
+
 	//Setting start places for ships
 	for (int i = 0; i < maxAmount; i++)
 	{
@@ -50,6 +54,7 @@ GameClientController::GameClientController(SDL_Renderer* ren)
 		}
 	}
 }
+
 Package GameClientController::createShotPackage(int x, int y)
 {
 	Package package{ {playerIndexOnServer,x,y}, requestStrikeInfo };
@@ -67,11 +72,19 @@ void GameClientController::proceedResponse(Package response)
 				for (int j = 0; j < 10; j++)
 					playerFields[pl][j][i] = response.data[pl * 100 + 10 * j + i];
 		break;
+	case turnInfo:
+		canShoot = response.data[playerIndexOnServer];
+		break;
 	case strikeSuccess:
 		playerIndex = response.data[0];
 		x = response.data[1];
 		y = response.data[2];
 		playerFields[playerIndex][x][y] = shipDamaged;
+		if (playerIndex == this->playerIndexOnServer)
+		{
+			std::cout << "Can shoot now\n";
+			canShoot = true;
+		}
 		break;
 	case strikeMissed:
 		playerIndex = response.data[0];
@@ -87,6 +100,8 @@ void GameClientController::proceedResponse(Package response)
 		break;
 	case battleEnds:
 		gameState = results;
+		gameWinner = response.data[0];
+		break;
 	default:
 		break;
 	}
@@ -100,7 +115,7 @@ Package GameClientController::handleMouseEvent(SDL_Event _event)
 
 	if (gameState == 0)
 	{
-		if (grabbedShip == NULL && event.type == SDL_MOUSEBUTTONDOWN)
+		if (grabbedShip == NULL && event.type == SDL_MOUSEBUTTONDOWN && event.button.button==SDL_BUTTON_LEFT)
 		{
 			for (int i = 0; i < maxAmount; i++)
 			{
@@ -124,87 +139,94 @@ Package GameClientController::handleMouseEvent(SDL_Event _event)
 		}
 		else if (event.type == SDL_MOUSEBUTTONDOWN)
 		{
-			int cellX = ((mousePos.x - (playerIndexOnServer * (SCREEN_WIDTH / 2)) - 30) / 30);
-			int cellY = (mousePos.y - 30) / 30;
-
-
-			int shipLength = grabbedShip->getRotation() ? 0 : grabbedShip->getCellsValue() - 1;
-			int shipHeight = grabbedShip->getRotation() ? grabbedShip->getCellsValue() - 1 : 0;
-
-			if (cellX > 9 || cellX + shipLength > 9 ||
-				cellY > 9 || cellY + shipHeight > 9 ||
-				cellX < 0 || cellY < 0)
+			if (event.button.button == SDL_BUTTON_LEFT)
 			{
-				grabbedShip->resetPosition();
-				grabbedShip = NULL;
-				return Package();
-			}
+				int cellX = ((mousePos.x - (playerIndexOnServer * (SCREEN_WIDTH / 2)) - 30) / 30);
+				int cellY = (mousePos.y - 30) / 30;
 
-			// Check if it's allowed to place the ship
-			int cell1X, cell2X;
-			int cell1Y, cell2Y;
 
-			cell1X = cellX == 0 ? 0 : cellX - 1;
-			cell1Y = cellY == 0 ? 0 : cellY - 1;
+				int shipLength = grabbedShip->getRotation() ? 0 : grabbedShip->getCellsValue() - 1;
+				int shipHeight = grabbedShip->getRotation() ? grabbedShip->getCellsValue() - 1 : 0;
 
-			cell2X = cellX + shipLength + 1;
-			if (cell2X > 9)
-				cell2X = 9;
-
-			cell2Y = cellY + shipHeight + 1;
-			if (cell2Y > 9)
-				cell2Y = 9;
-
-			for (int i = cellY; i <= cellY + shipHeight; i++)
-			{
-				for (int j = cellX; j <= cellX + shipLength; j++)
+				if (cellX > 9 || cellX + shipLength > 9 ||
+					cellY > 9 || cellY + shipHeight > 9 ||
+					cellX < 0 || cellY < 0)
 				{
-					if (playerFields[playerIndexOnServer][i][j] != emptyCell)
+					grabbedShip->resetPosition();
+					grabbedShip = NULL;
+					return Package();
+				}
+
+				// Check if it's allowed to place the ship
+				int cell1X, cell2X;
+				int cell1Y, cell2Y;
+
+				cell1X = cellX == 0 ? 0 : cellX - 1;
+				cell1Y = cellY == 0 ? 0 : cellY - 1;
+
+				cell2X = cellX + shipLength + 1;
+				if (cell2X > 9)
+					cell2X = 9;
+
+				cell2Y = cellY + shipHeight + 1;
+				if (cell2Y > 9)
+					cell2Y = 9;
+
+				for (int i = cellY; i <= cellY + shipHeight; i++)
+				{
+					for (int j = cellX; j <= cellX + shipLength; j++)
 					{
-						grabbedShip->resetPosition();
-						grabbedShip = NULL;
-						return Package();
+						if (playerFields[playerIndexOnServer][i][j] != emptyCell)
+						{
+							grabbedShip->resetPosition();
+							grabbedShip = NULL;
+							return Package();
+						}
 					}
 				}
-			}
 
-			for (int i = cell1Y; i <= cell2Y; i++)
-			{
-				for (int j = cell1X; j <= cell2X; j++)
+				for (int i = cell1Y; i <= cell2Y; i++)
 				{
-					playerFields[playerIndexOnServer][i][j] = shipDenied;
+					for (int j = cell1X; j <= cell2X; j++)
+					{
+						playerFields[playerIndexOnServer][i][j] = shipDenied;
+					}
 				}
-			}
 
-			for (int i = cellY; i <= cellY + shipHeight; i++)
-			{
-				for (int j = cellX; j <= cellX + shipLength; j++)
+				for (int i = cellY; i <= cellY + shipHeight; i++)
 				{
-					playerFields[playerIndexOnServer][i][j] = grabbedShip->getCellsValue();
+					for (int j = cellX; j <= cellX + shipLength; j++)
+					{
+						playerFields[playerIndexOnServer][i][j] = grabbedShip->getCellsValue();
+					}
 				}
-			}
 
-			grabbedShip->setCell(cellX, cellY);
+				grabbedShip->setCell(cellX, cellY);
 
-			Package package
-			{
+				Package package
 				{
-					playerIndexOnServer,
-					cellX,
-					cellY,
-					cell1X,
-					cell1Y,
-					cell2X,
-					cell2Y,
-					grabbedShip->getCellsValue(),
-					grabbedShip->getRotation()
-				},
-				requestPlaceShip
-			};
-			grabbedShip->setPlace(SDL_Rect{ -100,-100,0,0 });
-			grabbedShip = NULL;
+					{
+						playerIndexOnServer,
+						cellX,
+						cellY,
+						cell1X,
+						cell1Y,
+						cell2X,
+						cell2Y,
+						grabbedShip->getCellsValue(),
+						grabbedShip->getRotation()
+					},
+					requestPlaceShip
+				};
+				grabbedShip->setPlace(SDL_Rect{ -100,-100,0,0 });
+				grabbedShip = NULL;
 
-			return package;
+				return package;
+			}
+			else if (grabbedShip!=NULL && event.button.button == SDL_BUTTON_RIGHT)
+			{
+				grabbedShip->rotate();
+			}
 		}
 	}
 	else if (gameState == 1)
@@ -212,13 +234,14 @@ Package GameClientController::handleMouseEvent(SDL_Event _event)
 		int cellX = ((mousePos.x - ((playerIndexOnServer == 0) * (SCREEN_WIDTH / 2)) - 30) / 30);
 		int cellY = (mousePos.y - 30) / 30;
 
-		if (event.type == SDL_MOUSEBUTTONDOWN)
+		if (event.type == SDL_MOUSEBUTTONDOWN && canShoot)
 		{
 			if (cellX < 0 || cellX > 9 || cellY < 0 || cellY > 9)
 			{
 				return Package();
 			}
 			std::cout << "Shot fired!\n";
+			canShoot = false;
 			return createShotPackage(cellX, cellY);
 		}
 	}
