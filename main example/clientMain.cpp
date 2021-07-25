@@ -80,9 +80,9 @@ int help(SDL_Renderer* renderer, TTF_Font* font)
 int menu(SDL_Renderer* renderer, TTF_Font* font)
 {
 	Button buttons[buttonsAmount];
-	buttons[0].setText("1. начать игру");
-	buttons[1].setText("2. помощь");
-	buttons[2].setText("3. выйти");
+	buttons[0].setText("1. Начать игру");
+	buttons[1].setText("2. Помощь");
+	buttons[2].setText("3. Выйти");
 
 	int x, y;
 	SDL_Color defaultButtonColor = white;
@@ -175,7 +175,7 @@ int menu(SDL_Renderer* renderer, TTF_Font* font)
 			buttons[i].draw(renderer, buttonColors[i], font, white);
 
 		drawText(renderer, font, 10, 10, "морской бой", white);
-		drawText(renderer, font, 10, 10 + TTF_FontHeight(font) + 10, "И594 Алешин Андрей", white);
+		drawText(renderer, font, 10, 10 + TTF_FontHeight(font) + 10, "И594", white);
 		SDL_RenderPresent(renderer);
 		SDL_Delay(32);
 		SDL_RenderClear(renderer);
@@ -378,6 +378,19 @@ int start(SDL_Renderer* renderer, TTF_Font* font)
 				gameClientController.ships[i][j].image();
 			}
 		}
+		string textToRender = "";
+		if (gameClientController.gameState == battle)
+		{
+			if (gameClientController.canShoot)
+				textToRender = "Стреляйте";
+			else
+				textToRender = "Ожидание";
+		}
+		else if (gameClientController.gameState == shipPlacement)
+		{
+			textToRender = "Расстановка кораблей";
+		}
+		drawText(renderer, font, 10, SCREEN_HEIGHT - 40, textToRender.c_str(), black);
 
 		SDL_RenderPresent(renderer);
 

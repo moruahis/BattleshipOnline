@@ -46,7 +46,7 @@ void PackageController::sendPackages(TCPsocket receiver, int index)
 		if (package.message == timeToSendPackages)
 			continue;
 
-		if (package.message > 1 && package.message != fieldInfo && package.message != requestField && package.message != requestMessages)
+		if (package.message > 1 && package.message != fieldInfo && package.message != requestField && package.message != requestMessages && package.message!=requestTurn && package.message!=turnInfo)
 			std::cout << "Sending message: " << messages[package.message] << std::endl;
 
 		int result = SDLNet_TCP_Send(receiver, &package, sizeof(Package));
@@ -84,7 +84,7 @@ void PackageController::receivePackages(TCPsocket sender, int index)
 				{
 					failCounter += 1;
 				}
-				if (pkg.message > 1 && pkg.message != fieldInfo && pkg.message != requestField && pkg.message != requestMessages)
+				if (pkg.message > 1 && pkg.message != fieldInfo && pkg.message != requestField && pkg.message != requestMessages && pkg.message != requestTurn && pkg.message != turnInfo)
 					std::cout << "received message: " << messages[pkg.message] << std::endl;
 				addPackageToReceivedQueue(pkg, index);
 			}

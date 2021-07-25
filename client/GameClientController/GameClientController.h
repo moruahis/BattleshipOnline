@@ -8,7 +8,7 @@
 
 #define maxAmount 4
 #define SCREEN_WIDTH 720 //1% = 7.2
-#define SCREEN_HEIGHT 540 //1% = 5.4
+#define SCREEN_HEIGHT 580 //1% = 5.4
 
 enum currentGameStates {
 	shipPlacement,

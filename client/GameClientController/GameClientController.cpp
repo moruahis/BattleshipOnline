@@ -9,7 +9,7 @@ int scale_x(double value)
 }
 int scale_y(double value)
 {
-	return round((value / 5.4) * ((double)SCREEN_HEIGHT / 100));
+	return round((value / 5.8) * ((double)SCREEN_HEIGHT / 100));
 }
 
 GameClientController::GameClientController()
